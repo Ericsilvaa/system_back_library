@@ -18,8 +18,8 @@ class Services {
     return db[this.nomeModel].findAll(where);
   }
 
-  async encontrarRegistroUnico(where) {
-    return db[this.nomeModel].findOne(where);
+  async encontrarRegistroUnico(id) {
+    return db[this.nomeModel].findOne({ where: { id } });
   }
 
   // update

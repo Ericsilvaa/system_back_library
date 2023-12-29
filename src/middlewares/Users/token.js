@@ -1,13 +1,14 @@
 const jwt = require("jsonwebtoken");
 // gerandoToken
-const gerarToken = ({ nome, sobrenome, email }) => {
+const gerarToken = ({ nome, email, id, admin }) => {
   const secret = process.env.NODE_ENV_JWT_SECRET_KEY;
   const timeExpires = "5m";
 
   const payload = {
     nome,
-    sobrenome,
+    id,
     email,
+    admin,
   };
 
   const options = {

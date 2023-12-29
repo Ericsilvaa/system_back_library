@@ -7,6 +7,9 @@ const {
 } = require("../../middlewares/Validation/userValidation");
 
 const { gerarToken, validateToken } = require("../../middlewares/Users/token");
+const PasswordHelper = require("../../helpers/passwordHelper");
+const Jwt = require("jsonwebtoken");
+const secret = process.env.NODE_ENV_JWT_SECRET_KEY;
 
 class UserRegistersController {
   static async registerUser(req, res, next) {
@@ -37,30 +40,37 @@ class UserRegistersController {
     }
   }
 
-  static async signIn(req, res, next) {
+  static async login(req, res, next) {
     const { email, senha_hash } = req.body;
     try {
-      const userLoginValid = await userRegister.encontrarRegistroUnico({
-        where: { email: email },
+      const { dataValues } = await userRegister.encontrarRegistroUnico({
+        where: { email },
       });
-      if (!userLoginValid) throw new Error("Invalid Email!");
-      if (await userCompareSenha(senha_hash, userLoginValid.senha_hash)) {
-        const token_de_validacao = gerarToken(userLoginValid);
-        // enviar para db e para o cookie o novo token
-        userRegister.atualizarRegistro(
-          { token_de_validacao },
-          {
-            where: { email: email },
-          }
-        );
 
-        res
-          .cookie("token_de_validacao", token_de_validacao, {})
-          .status(200)
-          .send("User Authorized");
-      } else {
-        throw new Error("Password Incorrect!");
-      }
+      if (!dataValues) throw new Error("Invalid Email!");
+
+      const match = await PasswordHelper.comparePassword(
+        senha_hash,
+        dataValues.senha_hash
+      );
+
+      if (!match) throw new Error("O usuario e senha invalidos!");
+
+      const token = Jwt.sign(
+        {
+          nome: dataValues.nome,
+          email: dataValues.email,
+          id: dataValues.id,
+          admin: dataValues.admin,
+        },
+        secret
+      );
+
+      res
+        .cookie("access_token", "Bearer " + token, {})
+        .status(200)
+        .send(`User Authorized ${token}`);
+      return;
     } catch (error) {
       res.status(403).send({ message: error.message });
     }
